@@ -11,23 +11,26 @@ app.get('/mlb-props', async (req, res) => {
   const page = await browser.newPage();
 
   try {
+    console.log("🔄 Loading FanDuel props page...");
     await page.goto('https://sportsbook.fanduel.com/sports/navigation/baseball/mlb?tab=player-props', {
       waitUntil: 'networkidle',
       timeout: 60000
     });
 
-    // Wait and click to open player prop tabs
     await page.waitForTimeout(5000);
-    const tabButtons = await page.$$('[data-testid="tab-button"]');
+    console.log("🔎 Attempting to click batter/pitcher tabs...");
 
+    const tabButtons = await page.$$('[data-testid="tab-button"]');
     for (const tab of tabButtons) {
       const text = await tab.textContent();
       if (text.toLowerCase().includes('batter') || text.toLowerCase().includes('pitcher')) {
-        await tab.click();
-        await page.waitForTimeout(3000); // wait for props to load
+        console.log(`➡️ Clicking tab: ${text.trim()}`);
+        await tab.click({ timeout: 5000 }).catch(() => console.log(`⚠️ Tab '${text.trim()}' not clickable`));
+        await page.waitForTimeout(3000);
       }
     }
 
+    console.log("🔍 Extracting props...");
     const props = await page.evaluate(() => {
       const results = [];
       const cards = document.querySelectorAll('[data-testid="accordion-card"]');
@@ -53,6 +56,7 @@ app.get('/mlb-props', async (req, res) => {
       return results;
     });
 
+    console.log(`✅ Found ${props.length} props.`);
     await browser.close();
     res.json(props);
   } catch (err) {
@@ -63,5 +67,5 @@ app.get('/mlb-props', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('✅ Interactive FanDuel scraper running on port 3000');
+  console.log('✅ Timeout-safe FanDuel scraper running on port 3000');
 });
