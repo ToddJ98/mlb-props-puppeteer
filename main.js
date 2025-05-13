@@ -17,37 +17,14 @@ app.get('/mlb-props', async (req, res) => {
       timeout: 60000
     });
 
-    await page.waitForTimeout(5000);
-    console.log("🔍 Scraping all visible props without tab clicks...");
+    await page.waitForTimeout(6000);
 
-    const props = await page.evaluate(() => {
-      const results = [];
-      const cards = document.querySelectorAll('[data-testid="accordion-card"]');
+    console.log("📸 Capturing raw HTML of main content area...");
+    const html = await page.content();
 
-      cards.forEach(card => {
-        const playerHeader = card.querySelector('[data-testid="accordion-card-header"]');
-        const playerName = playerHeader ? playerHeader.textContent.trim().split('\n')[0] : "Unknown Player";
-
-        const lines = card.querySelectorAll('[data-testid="selection-price"]');
-        lines.forEach(line => {
-          const lineText = line.textContent.trim();
-          if (lineText.includes("Over") || lineText.includes("Under")) {
-            results.push({
-              player: playerName,
-              prop: lineText,
-              odds: "see line",
-              confidence: "N/A"
-            });
-          }
-        });
-      });
-
-      return results;
-    });
-
-    console.log(`✅ Found ${props.length} props.`);
     await browser.close();
-    res.json(props);
+    res.set('Content-Type', 'text/html');
+    res.send(html);
   } catch (err) {
     console.error("❌ Scraping error:", err);
     await browser.close();
@@ -56,5 +33,5 @@ app.get('/mlb-props', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('✅ FanDuel scraper (no tabs) running on port 3000');
+  console.log('🧪 Diagnostic FanDuel scraper running on port 3000');
 });
