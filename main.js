@@ -1,6 +1,6 @@
 const express = require('express');
 const puppeteer = require('puppeteer-core');
-const chromium = require('playwright-chromium');
+const { chromium } = require('playwright-chromium');
 const app = express();
 
 app.get('/mlb-props', async (req, res) => {
@@ -44,10 +44,9 @@ app.get('/mlb-props', async (req, res) => {
   });
 
   await browser.close();
-
   res.json(props);
 });
 
 app.listen(3000, () => {
-  console.log('✅ Puppeteer-core server running on port 3000');
+  console.log('✅ Puppeteer-core + Playwright server running on port 3000');
 });
