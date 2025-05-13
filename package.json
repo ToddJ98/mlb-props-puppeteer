@@ -1,0 +1,13 @@
+{
+  "name": "mlb-props-puppeteer",
+  "version": "1.0.0",
+  "description": "Puppeteer scraper for MLB player props",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "puppeteer": "^21.3.8"
+  }
+}
