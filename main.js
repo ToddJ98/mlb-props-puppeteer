@@ -18,19 +18,8 @@ app.get('/mlb-props', async (req, res) => {
     });
 
     await page.waitForTimeout(5000);
-    console.log("🔎 Attempting to click batter/pitcher tabs...");
+    console.log("🔍 Scraping all visible props without tab clicks...");
 
-    const tabButtons = await page.$$('[data-testid="tab-button"]');
-    for (const tab of tabButtons) {
-      const text = await tab.textContent();
-      if (text.toLowerCase().includes('batter') || text.toLowerCase().includes('pitcher')) {
-        console.log(`➡️ Clicking tab: ${text.trim()}`);
-        await tab.click({ timeout: 5000 }).catch(() => console.log(`⚠️ Tab '${text.trim()}' not clickable`));
-        await page.waitForTimeout(3000);
-      }
-    }
-
-    console.log("🔍 Extracting props...");
     const props = await page.evaluate(() => {
       const results = [];
       const cards = document.querySelectorAll('[data-testid="accordion-card"]');
@@ -67,5 +56,5 @@ app.get('/mlb-props', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('✅ Timeout-safe FanDuel scraper running on port 3000');
+  console.log('✅ FanDuel scraper (no tabs) running on port 3000');
 });
