@@ -22,33 +22,36 @@ app.get('/mlb-props', async (req, res) => {
     const $ = cheerio.load(html);
     const props = [];
 
-    $('.prediction-card').each((_, el) => {
-      const player = $(el).find('.text-2xs.font-bold').first().text().trim();
-      const prop = $(el).find('.capitalize.text-xs').first().text().trim();
-      const oddsText = $(el).find('.text-xs.font-bold.text-right').text().trim();
-      const confidenceText = $(el).find('.w-full.rounded.bg-gray-100 .text-2xs').text().trim();
+    $('div').each((_, el) => {
+      const text = $(el).text().trim();
 
-      const oddsMatch = oddsText.match(/([-+]\\d+)/);
-      const odds = oddsMatch ? parseInt(oddsMatch[1], 10) : 'N/A';
+      // Match structure with player name + prop type + odds + hit rate
+      if (
+        text &&
+        text.match(/Over|Under/) &&
+        text.match(/Hit \\d+ of last \\d+/)
+      ) {
+        const parts = text.split('\n').map(x => x.trim()).filter(Boolean);
+        const player = parts[0];
+        const propLine = parts.find(x => x.includes("Over") || x.includes("Under")) || "N/A";
+        const confidence = parts.find(x => x.includes("Hit")) || "N/A";
+        const oddsMatch = propLine.match(/([-+]\\d+)/);
+        const odds = oddsMatch ? parseInt(oddsMatch[1], 10) : "N/A";
 
-      if (player && prop) {
-        props.push({
-          player,
-          prop,
-          odds,
-          confidence: confidenceText || 'N/A'
-        });
+        if (player && propLine) {
+          props.push({ player, prop: propLine, odds, confidence });
+        }
       }
     });
 
-    console.log(`✅ Extracted ${props.length} props from BettingPros`);
+    console.log(`✅ Structurally extracted ${props.length} props from BettingPros`);
     res.json(props);
   } catch (err) {
-    console.error("❌ BettingPros ScraperAPI error:", err.message);
-    res.status(500).json({ error: "BettingPros scrape failed" });
+    console.error("❌ BettingPros structural scraper error:", err.message);
+    res.status(500).json({ error: "Scraping failed" });
   }
 });
 
 app.listen(3000, () => {
-  console.log('✅ BettingPros (fixed selectors) server running on port 3000');
+  console.log('✅ Structural BettingPros scraper running on port 3000');
 });
