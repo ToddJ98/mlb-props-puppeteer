@@ -9,42 +9,50 @@ app.get('/mlb-props', async (req, res) => {
   });
 
   const page = await browser.newPage();
-  await page.goto('https://sportsbook.fanduel.com/sports/navigation/baseball/mlb?tab=player-props', {
-    waitUntil: 'networkidle',
-    timeout: 60000
-  });
 
-  const props = await page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('div')).filter(div =>
-      div.textContent.match(/(Total Bases|Hits|Home Runs|RBIs|Strikeouts|Pitching Outs)/)
-    );
-
-    const props = [];
-
-    rows.forEach(row => {
-      const playerDiv = row.closest('div');
-      const playerName = playerDiv?.innerText?.split('\n')[0] || "";
-      const lines = playerDiv?.innerText?.split('\n').filter(line =>
-        line.includes('Over') || line.includes('Under')
-      );
-
-      lines.forEach(line => {
-        props.push({
-          player: playerName,
-          prop: line,
-          odds: 'see line',
-          confidence: 'N/A'
-        });
-      });
+  try {
+    await page.goto('https://sportsbook.fanduel.com/sports/navigation/baseball/mlb?tab=player-props', {
+      waitUntil: 'networkidle',
+      timeout: 60000
     });
 
-    return props;
-  });
+    // Wait extra time to allow FanDuel JS to fully render content
+    await page.waitForTimeout(5000);
 
-  await browser.close();
-  res.json(props);
+    const props = await page.evaluate(() => {
+      const results = [];
+      const cards = document.querySelectorAll('[data-testid="accordion-card"]');
+
+      cards.forEach(card => {
+        const playerHeader = card.querySelector('[data-testid="accordion-card-header"]');
+        const playerName = playerHeader ? playerHeader.textContent.trim().split("\n")[0] : "Unknown Player";
+
+        const lines = card.querySelectorAll('[data-testid="selection-price"]');
+        lines.forEach(line => {
+          const lineText = line.textContent.trim();
+          if (lineText.includes("Over") || lineText.includes("Under")) {
+            results.push({
+              player: playerName,
+              prop: lineText,
+              odds: "see line",
+              confidence: "N/A"
+            });
+          }
+        });
+      });
+
+      return results;
+    });
+
+    await browser.close();
+    res.json(props);
+  } catch (err) {
+    console.error("❌ Scraping error:", err);
+    await browser.close();
+    res.status(500).send("Scraping error");
+  }
 });
 
 app.listen(3000, () => {
-  console.log('✅ Playwright-only scraper running on port 3000');
+  console.log('✅ Improved Playwright FanDuel scraper running on port 3000');
 });
