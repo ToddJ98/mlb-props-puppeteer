@@ -1,18 +1,16 @@
 const express = require('express');
-const puppeteer = require('puppeteer-core');
 const { chromium } = require('playwright-chromium');
 const app = express();
 
 app.get('/mlb-props', async (req, res) => {
-  const browser = await puppeteer.launch({
-    executablePath: chromium.executablePath(),
+  const browser = await chromium.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: ['--no-sandbox']
   });
 
   const page = await browser.newPage();
   await page.goto('https://sportsbook.fanduel.com/sports/navigation/baseball/mlb?tab=player-props', {
-    waitUntil: 'networkidle2',
+    waitUntil: 'networkidle',
     timeout: 60000
   });
 
@@ -25,8 +23,8 @@ app.get('/mlb-props', async (req, res) => {
 
     rows.forEach(row => {
       const playerDiv = row.closest('div');
-      const playerName = playerDiv?.innerText?.split('\\n')[0] || "";
-      const lines = playerDiv?.innerText?.split('\\n').filter(line =>
+      const playerName = playerDiv?.innerText?.split('\n')[0] || "";
+      const lines = playerDiv?.innerText?.split('\n').filter(line =>
         line.includes('Over') || line.includes('Under')
       );
 
@@ -48,5 +46,5 @@ app.get('/mlb-props', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('✅ Puppeteer-core + Playwright server running on port 3000');
+  console.log('✅ Playwright-only scraper running on port 3000');
 });
