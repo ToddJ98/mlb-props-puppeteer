@@ -1,10 +1,12 @@
 const express = require('express');
-const puppeteer = require('puppeteer');
+const puppeteer = require('puppeteer-core');
+const chromium = require('playwright-chromium');
 const app = express();
 
 app.get('/mlb-props', async (req, res) => {
   const browser = await puppeteer.launch({
-    headless: 'new',
+    executablePath: chromium.executablePath(),
+    headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox']
   });
 
@@ -14,10 +16,7 @@ app.get('/mlb-props', async (req, res) => {
     timeout: 60000
   });
 
-  const html = await page.content();
-  const props = [];
-
-  const extracted = await page.evaluate(() => {
+  const props = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('div')).filter(div =>
       div.textContent.match(/(Total Bases|Hits|Home Runs|RBIs|Strikeouts|Pitching Outs)/)
     );
@@ -26,8 +25,8 @@ app.get('/mlb-props', async (req, res) => {
 
     rows.forEach(row => {
       const playerDiv = row.closest('div');
-      const playerName = playerDiv?.innerText?.split('\n')[0] || "";
-      const lines = playerDiv?.innerText?.split('\n').filter(line =>
+      const playerName = playerDiv?.innerText?.split('\\n')[0] || "";
+      const lines = playerDiv?.innerText?.split('\\n').filter(line =>
         line.includes('Over') || line.includes('Under')
       );
 
@@ -46,9 +45,9 @@ app.get('/mlb-props', async (req, res) => {
 
   await browser.close();
 
-  res.json(extracted);
+  res.json(props);
 });
 
 app.listen(3000, () => {
-  console.log('✅ Puppeteer server running on port 3000');
+  console.log('✅ Puppeteer-core server running on port 3000');
 });
