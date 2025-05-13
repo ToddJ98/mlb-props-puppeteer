@@ -10,7 +10,7 @@ const BETTINGPROS_URL = 'https://www.bettingpros.com/mlb/picks/prop-bets/';
 app.get('/mlb-props', async (req, res) => {
   try {
     console.log("🌐 Fetching BettingPros props via ScraperAPI...");
-    const response = await axios.get(`http://api.scraperapi.com`, {
+    const response = await axios.get('http://api.scraperapi.com', {
       params: {
         api_key: SCRAPERAPI_KEY,
         url: BETTINGPROS_URL,
@@ -22,20 +22,21 @@ app.get('/mlb-props', async (req, res) => {
     const $ = cheerio.load(html);
     const props = [];
 
-    $('div.bet-pick-row').each((_, el) => {
-      const player = $(el).find('.bet-player').text().trim();
-      const propLine = $(el).find('.bet-prop').text().trim();
-      const confidence = $(el).find('.bet-confidence').text().trim();
-      const oddsText = $(el).find('.bet-odds').text().trim();
+    $('.prediction-card').each((_, el) => {
+      const player = $(el).find('.text-2xs.font-bold').first().text().trim();
+      const prop = $(el).find('.capitalize.text-xs').first().text().trim();
+      const oddsText = $(el).find('.text-xs.font-bold.text-right').text().trim();
+      const confidenceText = $(el).find('.w-full.rounded.bg-gray-100 .text-2xs').text().trim();
+
       const oddsMatch = oddsText.match(/([-+]\\d+)/);
       const odds = oddsMatch ? parseInt(oddsMatch[1], 10) : 'N/A';
 
-      if (player && propLine) {
+      if (player && prop) {
         props.push({
           player,
-          prop: propLine,
+          prop,
           odds,
-          confidence: confidence || 'N/A'
+          confidence: confidenceText || 'N/A'
         });
       }
     });
@@ -49,5 +50,5 @@ app.get('/mlb-props', async (req, res) => {
 });
 
 app.listen(3000, () => {
-  console.log('✅ BettingPros ScraperAPI server running on port 3000');
+  console.log('✅ BettingPros (fixed selectors) server running on port 3000');
 });
