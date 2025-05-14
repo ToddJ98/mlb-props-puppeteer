@@ -2,28 +2,29 @@ const express = require('express');
 const axios = require('axios');
 
 const app = express();
-
 const PORT = 3000;
-const SCRAPERAPI_KEY = '5100e05e1a481daca2122333f4b3b80b';
-const BETTINGPROS_API = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
 
-// Root route for base URL health check
+// BettingPros internal JSON API
+const TARGET_URL = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
+
+// ZenRows API Key
+const ZENROWS_API_KEY = 'ab60310b1d3d78727c9f73a17dde6ff7f1797253';
+
 app.get('/', (req, res) => {
-  res.send('MLB Props API is running');
+  res.send('MLB Props API (ZenRows) is running');
 });
 
-// Props route via ScraperAPI proxy
 app.get('/mlb-props', async (req, res) => {
   try {
-    console.log("🌐 Fetching BettingPros JSON API via ScraperAPI proxy...");
-    const response = await axios.get('http://api.scraperapi.com', {
+    console.log("🌐 Fetching BettingPros JSON via ZenRows...");
+    const response = await axios.get('https://api.zenrows.com/v1', {
       params: {
-        api_key: SCRAPERAPI_KEY,
-        url: BETTINGPROS_API,
-        render: false
+        url: TARGET_URL,
+        apikey: ZENROWS_API_KEY,
+        js_render: 'false'
       },
       headers: {
-        'Accept': 'application/json'
+        Accept: 'application/json'
       }
     });
 
@@ -41,14 +42,14 @@ app.get('/mlb-props', async (req, res) => {
       }
     });
 
-    console.log(`✅ Fetched ${props.length} props from BettingPros via ScraperAPI`);
+    console.log(`✅ Fetched ${props.length} props from BettingPros via ZenRows`);
     res.json(props);
   } catch (err) {
-    console.error("❌ Proxy fetch failed:", err.message);
-    res.status(500).json({ error: "Proxy API request failed" });
+    console.error("❌ ZenRows fetch failed:", err.message);
+    res.status(500).json({ error: "ZenRows API request failed" });
   }
 });
 
 app.listen(PORT, () => {
-  console.log(`✅ BettingPros ScraperAPI proxy server running on port ${PORT}`);
+  console.log(`✅ ZenRows-powered server running on port ${PORT}`);
 });
