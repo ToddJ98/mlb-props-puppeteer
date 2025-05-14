@@ -1,57 +1,44 @@
 const express = require('express');
 const axios = require('axios');
-const cheerio = require('cheerio');
 
 const app = express();
 
-const SCRAPERAPI_KEY = '5100e05e1a481daca2122333f4b3b80b';
-const BETTINGPROS_URL = 'https://www.bettingpros.com/mlb/picks/prop-bets/';
+// BettingPros internal JSON API endpoint for MLB player props
+const API_URL = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
 
 app.get('/mlb-props', async (req, res) => {
   try {
-    console.log("🌐 Fetching BettingPros props via ScraperAPI...");
-    const response = await axios.get('http://api.scraperapi.com', {
-      params: {
-        api_key: SCRAPERAPI_KEY,
-        url: BETTINGPROS_URL,
-        render: true
+    console.log("🌐 Fetching BettingPros props from internal JSON API...");
+    const response = await axios.get(API_URL, {
+      headers: {
+        'x-bp-api-key': 'web',  // Public key used by their frontend
+        'Referer': 'https://www.bettingpros.com/mlb/picks/prop-bets/',
+        'User-Agent': 'Mozilla/5.0'
       }
     });
 
-    const html = response.data;
-    const $ = cheerio.load(html);
+    const data = response.data;
     const props = [];
 
-    $('div').each((_, el) => {
-      const text = $(el).text().trim();
-
-      // Match structure with player name + prop type + odds + hit rate
-      if (
-        text &&
-        text.match(/Over|Under/) &&
-        text.match(/Hit \\d+ of last \\d+/)
-      ) {
-        const parts = text.split('\n').map(x => x.trim()).filter(Boolean);
-        const player = parts[0];
-        const propLine = parts.find(x => x.includes("Over") || x.includes("Under")) || "N/A";
-        const confidence = parts.find(x => x.includes("Hit")) || "N/A";
-        const oddsMatch = propLine.match(/([-+]\\d+)/);
-        const odds = oddsMatch ? parseInt(oddsMatch[1], 10) : "N/A";
-
-        if (player && propLine) {
-          props.push({ player, prop: propLine, odds, confidence });
-        }
+    data?.picks?.forEach(pick => {
+      if (pick && pick.player_name && pick.pick_title) {
+        props.push({
+          player: pick.player_name,
+          prop: pick.pick_title,
+          confidence: pick.hit_rate || "N/A",
+          odds: pick.odds || "N/A"
+        });
       }
     });
 
-    console.log(`✅ Structurally extracted ${props.length} props from BettingPros`);
+    console.log(`✅ Fetched ${props.length} props from BettingPros API`);
     res.json(props);
   } catch (err) {
-    console.error("❌ BettingPros structural scraper error:", err.message);
-    res.status(500).json({ error: "Scraping failed" });
+    console.error("❌ BettingPros API fetch failed:", err.message);
+    res.status(500).json({ error: "Failed to fetch props from BettingPros API" });
   }
 });
 
 app.listen(3000, () => {
-  console.log('✅ Structural BettingPros scraper running on port 3000');
+  console.log('✅ BettingPros JSON API scraper running on port 3000');
 });
