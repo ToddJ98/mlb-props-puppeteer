@@ -3,17 +3,20 @@ const axios = require('axios');
 
 const app = express();
 
-// BettingPros internal JSON API endpoint for MLB player props
-const API_URL = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
+const SCRAPERAPI_KEY = '5100e05e1a481daca2122333f4b3b80b';
+const TARGET_API = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
 
 app.get('/mlb-props', async (req, res) => {
   try {
-    console.log("🌐 Fetching BettingPros props from internal JSON API...");
-    const response = await axios.get(API_URL, {
+    console.log("🌐 Fetching BettingPros JSON API via ScraperAPI proxy...");
+    const response = await axios.get('http://api.scraperapi.com', {
+      params: {
+        api_key: SCRAPERAPI_KEY,
+        url: TARGET_API,
+        render: false
+      },
       headers: {
-        'x-bp-api-key': 'web',  // Public key used by their frontend
-        'Referer': 'https://www.bettingpros.com/mlb/picks/prop-bets/',
-        'User-Agent': 'Mozilla/5.0'
+        'Accept': 'application/json'
       }
     });
 
@@ -31,14 +34,14 @@ app.get('/mlb-props', async (req, res) => {
       }
     });
 
-    console.log(`✅ Fetched ${props.length} props from BettingPros API`);
+    console.log(`✅ Fetched ${props.length} props from BettingPros via ScraperAPI`);
     res.json(props);
   } catch (err) {
-    console.error("❌ BettingPros API fetch failed:", err.message);
-    res.status(500).json({ error: "Failed to fetch props from BettingPros API" });
+    console.error("❌ Proxy fetch failed:", err.message);
+    res.status(500).json({ error: "Proxy API request failed" });
   }
 });
 
 app.listen(3000, () => {
-  console.log('✅ BettingPros JSON API scraper running on port 3000');
+  console.log('✅ BettingPros API via ScraperAPI server running on port 3000');
 });
