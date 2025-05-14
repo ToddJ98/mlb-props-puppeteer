@@ -3,16 +3,23 @@ const axios = require('axios');
 
 const app = express();
 
+const PORT = 3000;
 const SCRAPERAPI_KEY = '5100e05e1a481daca2122333f4b3b80b';
-const TARGET_API = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
+const BETTINGPROS_API = 'https://api.bettingpros.com/v1/picks/mlb/player-prop-bets?category=prop-bets&sport=mlb';
 
+// Root route for base URL health check
+app.get('/', (req, res) => {
+  res.send('MLB Props API is running');
+});
+
+// Props route via ScraperAPI proxy
 app.get('/mlb-props', async (req, res) => {
   try {
     console.log("🌐 Fetching BettingPros JSON API via ScraperAPI proxy...");
     const response = await axios.get('http://api.scraperapi.com', {
       params: {
         api_key: SCRAPERAPI_KEY,
-        url: TARGET_API,
+        url: BETTINGPROS_API,
         render: false
       },
       headers: {
@@ -42,6 +49,6 @@ app.get('/mlb-props', async (req, res) => {
   }
 });
 
-app.listen(3000, () => {
-  console.log('✅ BettingPros API via ScraperAPI server running on port 3000');
+app.listen(PORT, () => {
+  console.log(`✅ BettingPros ScraperAPI proxy server running on port ${PORT}`);
 });
